@@ -100,23 +100,41 @@
 <body>
 
 <div class="container">
-    <div class="dashboard">
-        <div class="stat-box">
-            <div class="stat-val remaining" id="stat-remaining">0</div>
-            <div style="font-size: 0.8em; color: #64748b;">Unseen</div>
-        </div>
-        <div class="stat-box">
-            <div class="stat-val unlearned" id="stat-unlearned">0</div>
-            <div style="font-size: 0.8em; color: #64748b;">Learning</div>
-        </div>
-        <div class="stat-box">
-            <div class="stat-val learned" id="stat-learned">0</div>
-            <div style="font-size: 0.8em; color: #64748b;">Mastered</div>
-        </div>
+    <div class="nav-tabs" style="display: flex; gap: 10px; margin-bottom: 20px;">
+        <button class="tab-btn active" id="tab-practice-btn" onclick="switchTab('practice')" style="flex: 1; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">Practice Mode</button>
+        <button class="tab-btn" id="tab-review-btn" onclick="switchTab('review')" style="flex: 1; padding: 12px; background: #e2e8f0; color: #64748b; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">Question Stats</button>
     </div>
 
-    <div class="card" id="app-card"></div>
+    <!-- PRACTICE TAB -->
+    <div id="practice-view">
+        <div class="dashboard">
+            <div class="stat-box">
+                <div class="stat-val remaining" id="stat-remaining">0</div>
+                <div style="font-size: 0.8em; color: #64748b;">Unseen</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-val unlearned" id="stat-unlearned">0</div>
+                <div style="font-size: 0.8em; color: #64748b;">Learning</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-val learned" id="stat-learned">0</div>
+                <div style="font-size: 0.8em; color: #64748b;">Mastered</div>
+            </div>
+        </div>
+
+        <div class="card" id="app-card">Loading question bank...</div>
+    </div>
+
+    <!-- REVIEW TAB -->
+    <div id="review-view" style="display: none;">
+        <div class="card">
+            <h2 style="margin-top: 0;">Performance Breakdown</h2>
+            <p style="font-size: 0.9em; color: #64748b;">Track your total attempts, correct vs. wrong counts, and accuracy ratio per question.</p>
+            <div id="stats-list">No history recorded yet. Answer questions in Practice Mode to build your stats!</div>
+        </div>
+    </div>
 </div>
+
 
 <script>
     const masterQuestionBank = [
@@ -1221,35 +1239,94 @@
       { num: 1090, question: "Safest action when pedestrian steps onto zebra crossing at unsignalized intersection ahead:", options: ["(1) Maintain speed.", "(2) Lightly honk.", "(3) Immediately slow down and stop at least 3 meters before pedestrian crossing."], answer: 2 }
     ];
 
-    let unseenPool = [];
+        let unseenPool = [];
     let learningPool = [];
     let masteredPool = [];
     let currentRoundQueue = [];
     let currentRoundIndex = 0;
 
-    const MASTERY_STREAK = 2; 
-    const MAX_ROUND_SIZE = 30; 
+    let questionStats = {}; // Tracks { qNum: { correct: 0, wrong: 0 } }
+
+    function switchTab(tab) {
+        if (tab === 'practice') {
+            document.getElementById('practice-view').style.display = 'block';
+            document.getElementById('review-view').style.display = 'none';
+            document.getElementById('tab-practice-btn').style.background = 'var(--primary)';
+            document.getElementById('tab-practice-btn').style.color = 'white';
+            document.getElementById('tab-review-btn').style.background = '#e2e8f0';
+            document.getElementById('tab-review-btn').style.color = '#64748b';
+        } else {
+            document.getElementById('practice-view').style.display = 'none';
+            document.getElementById('review-view').style.display = 'block';
+            document.getElementById('tab-review-btn').style.background = 'var(--primary)';
+            document.getElementById('tab-review-btn').style.color = 'white';
+            document.getElementById('tab-practice-btn').style.background = '#e2e8f0';
+            document.getElementById('tab-practice-btn').style.color = '#64748b';
+            renderStatsList();
+        }
+    }
+
+    function renderStatsList() {
+        const listContainer = document.getElementById('stats-list');
+        const keys = Object.keys(questionStats);
+
+        if (keys.length === 0) {
+            listContainer.innerHTML = `<p style="color: #64748b;">No answer history recorded yet. Complete some questions in Practice Mode first!</p>`;
+            return;
+        }
+
+        let html = '';
+        keys.forEach(qNum => {
+            const stat = questionStats[qNum];
+            const qObj = masterQuestionBank.find(item => item.num == qNum);
+            const totalAttempts = stat.correct + stat.wrong;
+            const accuracy = Math.round((stat.correct / totalAttempts) * 100);
+            const badgeColor = accuracy >= 70 ? '#13734b' : '#c5221f';
+            const badgeBg = accuracy >= 70 ? '#e6f4ea' : '#fce8e6';
+
+            html += `
+                <div style="border-bottom: 1px solid #e2e8f0; padding: 12px 0;">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.9em; margin-bottom: 6px;">
+                        <strong>Question #${qNum}</strong>
+                        <span style="background: ${badgeBg}; color: ${badgeColor}; padding: 3px 8px; border-radius: 4px; font-weight: bold; font-size: 0.8em;">
+                            ${accuracy}% Accuracy (${stat.correct} Correct / ${stat.wrong} Wrong)
+                        </span>
+                    </div>
+                    <div style="font-size: 0.95em; color: var(--text-color);">
+                        ${qObj ? qObj.question : 'Question text'}
+                    </div>
+                </div>
+            `;
+        });
+
+        listContainer.innerHTML = html;
+    }
+
+    const MASTERY_STREAK = 2;
+    const MAX_ROUND_SIZE = 30;
     const NEW_PER_ROUND = 5;
+
  
 
     // --- PROGRESS SAVING LOGIC (LocalStorage) ---
     function saveProgress() {
-        const progressData = {
+           const progressData = {
             unseen: unseenPool,
             learning: learningPool,
-            mastered: masteredPool
+            mastered: masteredPool,
+            stats: questionStats
         };
+
         localStorage.setItem('taiwan_driving_prep_progress', JSON.stringify(progressData));
     }
 
     function loadProgress() {
         const saved = localStorage.getItem('taiwan_driving_prep_progress');
-        if (saved) {
-            try {
-                const parsed = JSON.parse(saved);
-                unseenPool = parsed.unseen || [];
-                learningPool = parsed.learning || [];
-                masteredPool = parsed.mastered || [];
+                    const parsed = JSON.parse(saved);
+            unseenPool = parsed.unseen || [];
+            learningPool = parsed.learning || [];
+            masteredPool = parsed.mastered || [];
+            questionStats = parsed.stats || {};
                 return true;
             } catch (e) {
                 console.error("Error loading progress", e);
