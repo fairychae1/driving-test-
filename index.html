@@ -1465,9 +1465,16 @@ function initializeSystem(forceReset = false) {
         const buttons = document.querySelectorAll('.option-btn');
         buttons.forEach(b => b.disabled = true);
 
+      const qNum = activeObj.item.num;
+if (!questionStats[qNum]) {
+    questionStats[qNum] = { correct: 0, wrong: 0 };
+}
+
         if (selectedIndex === correctIndex) {
             selectedBtn.classList.add('correct');
             activeObj.streak += 1;
+            questionStats[qNum].correct += 1;
+
 
             if (activeObj.streak >= MASTERY_STREAK) {
                 learningPool = learningPool.filter(i => i.item.num !== activeObj.item.num);
@@ -1476,7 +1483,9 @@ function initializeSystem(forceReset = false) {
         } else {
             selectedBtn.classList.add('wrong');
             buttons[correctIndex].classList.add('correct');
-            activeObj.streak = 0; 
+            activeObj.streak = 0;
+            questionStats[qNum].wrong += 1;
+
         }
 
         updateDashboard();
