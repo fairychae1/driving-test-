@@ -1501,29 +1501,30 @@ if (!questionStats[qNum]) {
         }, 1200);
     }
 
-    function renderRoundSummary() {
-        const card = document.getElementById('app-card');
-        card.innerHTML = `
-            <div class="round-screen">
-                <h2>Round Complete! 🎉</h2>
-                <p>Mastered: <strong>${masteredPool.length}</strong> / ${masterQuestionBank.length}</p>
-                <p>In Progress: <strong>${learningPool.length}</strong> questions</p>
-                <p>Remaining Unseen: <strong>${unseenPool.length}</strong> questions</p>
-                <button class="primary-btn" onclick="startNewRound()">Start Next Round (+5 New Qs)</button>
-            </div>
-        `;
-    }
+   function renderRoundSummary() {
+    const card = document.getElementById('app-card');
+    card.innerHTML = `
+        <div class="round-screen">
+            <h2>Round Complete! 🎉</h2>
+            <p>Mastered: <strong>${masteredPool.length}</strong> / ${masterQuestionBank.length}</p>
+            <p>In Progress: <strong>${learningPool.length}</strong> questions</p>
+            <p>Remaining Unseen: <strong>${unseenPool.length}</strong> questions</p>
+            <button class="primary-btn" onclick="startNewRound()">Start Next Round (+5 New Qs)</button>
+        </div>
+    `;
+}
 
-    function renderCompletionScreen() {
-        const card = document.getElementById('app-card');
-        card.innerHTML = `
-            <div class="round-screen">
-                <h2>All Questions Mastered! 🏆</h2>
-                <p>You completed every question in the set!</p>
-                <button class="primary-btn" onclick="resetAllProgress()">Restart Full Bank</button>
-            </div>
-        `;
-    }
+function renderCompletionScreen() {
+    const card = document.getElementById('app-card');
+    card.innerHTML = `
+        <div class="round-screen">
+            <h2>All Questions Mastered! 🏆</h2>
+            <p>You completed every question in the set!</p>
+            <button class="primary-btn" onclick="resetAllProgress()">Restart Full Bank</button>
+        </div>
+    `;
+}
+
 
     initializeSystem();
 </script>
