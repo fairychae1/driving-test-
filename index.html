@@ -1244,6 +1244,56 @@
     let masteredPool = [];
     let currentRoundQueue = [];
     let currentRoundIndex = 0;
+        function switchTab(tab) {
+        const practiceView = document.getElementById('practice-view') || document.querySelector('.dashboard').parentElement;
+        const reviewView = document.getElementById('review-view');
+        if (tab === 'practice') {
+            if (practiceView) practiceView.style.display = 'block';
+            if (reviewView) reviewView.style.display = 'none';
+        } else {
+            if (practiceView) practiceView.style.display = 'none';
+            if (reviewView) reviewView.style.display = 'block';
+            renderStatsList();
+        }
+    }
+
+    function renderStatsList() {
+        const listContainer = document.getElementById('stats-list');
+        if (!listContainer) return;
+        const keys = Object.keys(questionStats);
+
+        if (keys.length === 0) {
+            listContainer.innerHTML = `<p style="color: #64748b;">No answer history recorded yet. Complete some questions in Practice Mode first!</p>`;
+            return;
+        }
+
+        let html = '';
+        keys.forEach(qNum => {
+            const stat = questionStats[qNum];
+            const qObj = masterQuestionBank.find(item => item.num == qNum);
+            const totalAttempts = stat.correct + stat.wrong;
+            const accuracy = Math.round((stat.correct / totalAttempts) * 100);
+            const badgeColor = accuracy >= 70 ? '#13734b' : '#c5221f';
+            const badgeBg = accuracy >= 70 ? '#e6f4ea' : '#fce8e6';
+
+            html += `
+                <div style="border-bottom: 1px solid #e2e8f0; padding: 12px 0;">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.9em; margin-bottom: 6px;">
+                        <strong>Question #${qNum}</strong>
+                        <span style="background: ${badgeBg}; color: ${badgeColor}; padding: 3px 8px; border-radius: 4px; font-weight: bold; font-size: 0.8em;">
+                            ${accuracy}% Accuracy (${stat.correct} Correct / ${stat.wrong} Wrong)
+                        </span>
+                    </div>
+                    <div style="font-size: 0.95em; color: var(--text-color);">
+                        ${qObj ? qObj.question : 'Question text'}
+                    </div>
+                </div>
+            `;
+        });
+
+        listContainer.innerHTML = html;
+    }
+
 
     let questionStats = {}; // Tracks { qNum: { correct: 0, wrong: 0 } }
 
