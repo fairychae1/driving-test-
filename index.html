@@ -1332,17 +1332,30 @@
         document.getElementById('count-learning').innerText = learningPool.length;
         document.getElementById('count-mastered').innerText = masteredPool.length;
     }
+    function shuffleArray(array) {
+        const arr = [...array];
+        for (let i = arr.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+        return arr;
+    }
 
     function startNewRound() {
         currentRoundQueue = [];
         currentRoundIndex = 0;
 
-        const takeFromUnseen = unseenPool.splice(0, 5);
-        takeFromUnseen.forEach(item => {
-            learningPool.push({ item: item, streak: 0 });
-        });
+        // Shuffle unseen pool so new questions appear randomly
+        unseenPool = shuffleArray(unseenPool);
 
-        currentRoundQueue = [...learningPool];
+        // Fill learning pool up to active size
+        while (learningPool.length < 5 && unseenPool.length > 0) {
+            const item = unseenPool.shift();
+            learningPool.push({ item: item, streak: 0 });
+        }
+
+        // Shuffle queue for this active round
+        currentRoundQueue = shuffleArray(learningPool);
 
         if (currentRoundQueue.length === 0) {
             renderCompletionScreen();
@@ -1355,13 +1368,19 @@
         const activeObj = currentRoundQueue[currentRoundIndex];
         const item = activeObj.item;
         const card = document.getElementById('app-card');
-
-        // Check item.q first, fall back to item.question
         const questionText = item.q || item.question || 'Question #' + item.num;
 
+        // Map options so we can shuffle them without losing track of the correct answer index
+        let mappedOptions = item.options.map((opt, origIdx) => ({
+            text: opt,
+            isCorrect: origIdx === item.answer
+        }));
+
+        mappedOptions = shuffleArray(mappedOptions);
+
         let html = '<div class="question-text"><strong>Question #' + item.num + ':</strong> ' + questionText + '</div><div class="options-grid">';
-        item.options.forEach((opt, idx) => {
-            html += '<button class="option-btn" onclick="handleAnswer(' + idx + ', ' + item.answer + ', this, ' + currentRoundIndex + ')">' + opt + '</button>';
+        mappedOptions.forEach((optObj) => {
+            html += '<button class="option-btn" onclick="handleAnswer(' + optObj.isCorrect + ', this, ' + currentRoundIndex + ')">' + optObj.text + '</button>';
         });
         html += '</div>';
 
@@ -1369,7 +1388,8 @@
     }
 
 
-    function handleAnswer(selectedIndex, correctIndex, btnEl, index) {
+
+    function handleAnswer(isCorrect, btnEl, index) {
         const buttons = document.querySelectorAll('.option-btn');
         buttons.forEach(b => b.disabled = true);
 
@@ -1380,7 +1400,7 @@
             questionStats[qNum] = { correct: 0, wrong: 0 };
         }
 
-        if (selectedIndex === correctIndex) {
+        if (isCorrect) {
             btnEl.classList.add('correct');
             activeObj.streak += 1;
             questionStats[qNum].correct += 1;
@@ -1391,10 +1411,22 @@
             }
         } else {
             btnEl.classList.add('wrong');
-            buttons[correctIndex].classList.add('correct');
             activeObj.streak = 0;
             questionStats[qNum].wrong += 1;
         }
+
+        localStorage.setItem('qStats', JSON.stringify(questionStats));
+        updateDashboard();
+
+        setTimeout(() => {
+            currentRoundIndex++;
+            if (currentRoundIndex < currentRoundQueue.length) {
+                renderQuestion();
+            } else {
+                renderRoundSummary();
+            }
+        }, 1200);
+    }
 
         localStorage.setItem('qStats', JSON.stringify(questionStats));
         updateDashboard();
