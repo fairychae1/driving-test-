@@ -1332,6 +1332,7 @@
         document.getElementById('count-learning').innerText = learningPool.length;
         document.getElementById('count-mastered').innerText = masteredPool.length;
     }
+
     function shuffleArray(array) {
         const arr = [...array];
         for (let i = arr.length - 1; i > 0; i--) {
@@ -1368,7 +1369,7 @@
         const activeObj = currentRoundQueue[currentRoundIndex];
         const item = activeObj.item;
         const card = document.getElementById('app-card');
-        const questionText = item.q || item.question || 'Question #' + item.num;
+        const questionText = item.q || item.question || ('Question #' + item.num);
 
         // Map options so we can shuffle them without losing track of the correct answer index
         let mappedOptions = item.options.map((opt, origIdx) => ({
@@ -1378,22 +1379,19 @@
 
         mappedOptions = shuffleArray(mappedOptions);
 
-        let html = '<div class="question-text"><strong>Question #' + item.num + ':</strong> ' + questionText + '</div><div class="options-grid">';
+        let html = '<div class="question-text"><strong>Question #' + item.num + ':</strong> ' + questionText + '</div>';
         mappedOptions.forEach((optObj) => {
-            html += '<button class="option-btn" onclick="handleAnswer(' + optObj.isCorrect + ', this, ' + currentRoundIndex + ')">' + optObj.text + '</button>';
+            html += '<button class="option-btn" onclick="handleAnswer(' + optObj.isCorrect + ', this)">' + optObj.text + '</button>';
         });
-        html += '</div>';
 
         card.innerHTML = html;
     }
 
-
-
-    function handleAnswer(isCorrect, btnEl, index) {
+    function handleAnswer(isCorrect, btnEl) {
         const buttons = document.querySelectorAll('.option-btn');
         buttons.forEach(b => b.disabled = true);
 
-        const activeObj = currentRoundQueue[index];
+        const activeObj = currentRoundQueue[currentRoundIndex];
         const qNum = activeObj.item.num;
 
         if (!questionStats[qNum]) {
@@ -1428,19 +1426,6 @@
         }, 1200);
     }
 
-        localStorage.setItem('qStats', JSON.stringify(questionStats));
-        updateDashboard();
-
-        setTimeout(() => {
-            currentRoundIndex++;
-            if (currentRoundIndex < currentRoundQueue.length) {
-                renderQuestion();
-            } else {
-                renderRoundSummary();
-            }
-        }, 1200);
-    }
-
     function renderRoundSummary() {
         const card = document.getElementById('app-card');
         card.innerHTML = '<h2>Round Complete!</h2>' +
@@ -1457,12 +1442,17 @@
     function renderStatsList() {
         const listContainer = document.getElementById('stats-list');
         let html = '';
-        const keys = Object.keys(questionStats);
 
-        if (keys.length === 0) {
-            listContainer.innerHTML = 'No answer history recorded yet.';
-            return;
+        for (const [qNum, stats] of Object.entries(questionStats)) {
+            html += `<div class="stat-item">
+                <span>Question #${qNum}</span>
+                <span>Correct: ${stats.correct} | Wrong: ${stats.wrong}</span>
+            </div>`;
         }
+
+        listContainer.innerHTML = html;
+    }
+
 
         keys.forEach(qNum => {
             const stat = questionStats[qNum];
