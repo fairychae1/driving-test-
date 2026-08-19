@@ -1441,19 +1441,14 @@
 
     function renderStatsList() {
         const listContainer = document.getElementById('stats-list');
-        let html = '';
+        const keys = Object.keys(questionStats);
 
-        for (const [qNum, stats] of Object.entries(questionStats)) {
-            html += `<div class="stat-item">
-                <span>Question #${qNum}</span>
-                <span>Correct: ${stats.correct} | Wrong: ${stats.wrong}</span>
-            </div>`;
+        if (keys.length === 0) {
+            listContainer.innerHTML = 'No answer history recorded yet.';
+            return;
         }
 
-        listContainer.innerHTML = html;
-    }
-
-
+        let html = '';
         keys.forEach(qNum => {
             const stat = questionStats[qNum];
             const total = stat.correct + stat.wrong;
@@ -1467,7 +1462,3 @@
     }
 
     document.addEventListener('DOMContentLoaded', initializeSystem);
-</script>
-
-</body>
-</html>
