@@ -1356,7 +1356,10 @@
         const item = activeObj.item;
         const card = document.getElementById('app-card');
 
-        let html = '<div class="question-text">' + item.question + '</div><div class="options-grid">';
+        // Check item.q first, fall back to item.question
+        const questionText = item.q || item.question || 'Question #' + item.num;
+
+        let html = '<div class="question-text"><strong>Question #' + item.num + ':</strong> ' + questionText + '</div><div class="options-grid">';
         item.options.forEach((opt, idx) => {
             html += '<button class="option-btn" onclick="handleAnswer(' + idx + ', ' + item.answer + ', this, ' + currentRoundIndex + ')">' + opt + '</button>';
         });
@@ -1364,6 +1367,7 @@
 
         card.innerHTML = html;
     }
+
 
     function handleAnswer(selectedIndex, correctIndex, btnEl, index) {
         const buttons = document.querySelectorAll('.option-btn');
